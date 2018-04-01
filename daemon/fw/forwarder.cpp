@@ -82,8 +82,8 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // receive Interest
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
-  interest.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
-  ++m_counters.nInInterests;
+    interest.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
+    ++m_counters.nInInterests;
 
   // /localhost scope control
   bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
@@ -99,6 +99,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), interest.getNonce());
   if (hasDuplicateNonceInDnl) {
     // goto Interest loop pipeline
+    std::cout<<"DNL PASS"<<std::endl;
     this->onInterestLoop(inFace, interest);
     return;
   }
@@ -123,8 +124,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   }
   if (hasDuplicateNonceInPit) {
     // goto Interest loop pipeline
-    this->onInterestLoop(inFace, interest);
-    return;
+    std::cout<<"PIT PASS"<<std::endl;
+    //this->onInterestLoop(inFace, interest);
+    //return;
   }
 
   // cancel unsatisfy & straggler timer
@@ -185,6 +187,7 @@ Forwarder::onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& 
       NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName() << " nexthop-faceid=" << nextHopFace->getId());
       // go to outgoing Interest pipeline
       // scope control is unnecessary, because privileged app explicitly wants to forward
+      std::cout << "Face: " << nextHopFace->getId() << std::endl;
       this->onOutgoingInterest(pitEntry, *nextHopFace, interest);
     }
     return;
