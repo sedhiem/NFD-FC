@@ -27,7 +27,6 @@
 
 namespace nfd {
 namespace pit {
-
 InRecord::InRecord(Face& face)
   : FaceRecord(face)
 {

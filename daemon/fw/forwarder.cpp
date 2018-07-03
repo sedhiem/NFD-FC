@@ -304,21 +304,35 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   m_cs.insert(data);
 
   std::set<Face*> pendingDownstreams;
+  bool pitSatisfyFlag = true;
   // foreach PitEntry
   auto now = time::steady_clock::now();
   for (const shared_ptr<pit::Entry>& pitEntry : pitMatches) {
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
-
     // cancel unsatisfy & straggler timer
-    this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
+      this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
 
+      uint32_t max = 1;
+      Face* savedFace;
+      for(const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+        if(inRecord.getSequenceNumber() > max){
+          max = inRecord.getSequenceNumber();
+          savedFace = &inRecord.getFace();
+        }
+      }
+      if(max >1){
+      pendingDownstreams.insert(savedFace);
+      pitEntry->deleteInRecord(*savedFace);
+      pitSatisfyFlag = false;
+      }
+      else{
     // remember pending downstreams
-    for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
-      if (inRecord.getExpiry() > now) {
-        pendingDownstreams.insert(&inRecord.getFace());
+      for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+        if (inRecord.getExpiry() > now) {
+          pendingDownstreams.insert(&inRecord.getFace());
+        }
       }
     }
-
     // invoke PIT satisfy callback
     this->dispatchToStrategy(*pitEntry,
       [&] (fw::Strategy& strategy) { strategy.beforeSatisfyInterest(pitEntry, inFace, data); });
@@ -327,12 +341,13 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->insertDeadNonceList(*pitEntry, true, data.getFreshnessPeriod(), &inFace);
 
     // mark PIT satisfied
-    pitEntry->clearInRecords();
-    pitEntry->deleteOutRecord(inFace);
-
+    if(pitSatisfyFlag){
+      pitEntry->clearInRecords();
+      pitEntry->deleteOutRecord(inFace);
+    }
     // set PIT straggler timer
     this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
-  }
+}
 
   // foreach pending downstream
   for (Face* pendingDownstream : pendingDownstreams) {
