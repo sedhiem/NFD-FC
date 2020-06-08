@@ -66,7 +66,7 @@ Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
     it = m_inRecords.begin();
   }
   it->setSequenceNumber(m_inRecords.size());
-  std::cout << "inRecord SequenceNumber for " <<interest.getName() << "= "  << it->getSequenceNumber() << std::endl;
+  std::cout << "inRecord SequenceNumber for " <<interest.getName() << "= "  << it->getSequenceNumber()  <<"FaceId: " << face.getId()<< std::endl;
   it->update(interest);
   return it;
 }
@@ -106,7 +106,7 @@ Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
     it = m_outRecords.begin();
   }
   it->setSequenceNumber(m_outRecords.size());
-  std::cout << "outRecord SequenceNumber for " << interest.getName() << "= "  << it->getSequenceNumber() << std::endl;
+  std::cout << "outRecord SequenceNumber for " << interest.getName() << "= "  << it->getSequenceNumber() <<"FaceId: " << face.getId() << std::endl;
   it->update(interest);
   return it;
 }

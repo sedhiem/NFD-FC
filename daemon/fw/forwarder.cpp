@@ -99,7 +99,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), interest.getNonce());
   if (hasDuplicateNonceInDnl) {
     // goto Interest loop pipeline
-    std::cout<<"DNL PASS"<<std::endl;
+    //std::cout<<"DNL PASS"<<std::endl;
     this->onInterestLoop(inFace, interest);
     return;
   }
@@ -124,9 +124,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   }
   if (hasDuplicateNonceInPit) {
     // goto Interest loop pipeline
-    std::cout<<"PIT PASS"<<std::endl;
-    //this->onInterestLoop(inFace, interest);
-    //return;
+    //std::cout<<"PIT PASS"<<std::endl;
+    this->onInterestLoop(inFace, interest);
+    return;
   }
 
   // cancel unsatisfy & straggler timer
