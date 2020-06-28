@@ -86,7 +86,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
     m_keyChain.sign(*m_data);
   }
   else{
-    Name m_funcname(data.getFunction());
+    Name m_funcname(data.getFunction().toUri());
     Name prefix(data.getName());
     if(m_funcname == prefix){
       m_data = make_shared<Data>(data.getName());
@@ -154,7 +154,9 @@ Cs::find(const Interest& interest,
   BOOST_ASSERT(static_cast<bool>(hitCallback));
   BOOST_ASSERT(static_cast<bool>(missCallback));
 
-  const Name& prefix = interest.getName();
+  Name funcname(interest.getFunction().toUri());
+  Name contentname(interest.getName());
+  const Name& prefix = contentname.append(funcname);
   bool isRightmost = interest.getChildSelector() == 1;
   NFD_LOG_DEBUG("find " << prefix << (isRightmost ? " R" : " L"));
 

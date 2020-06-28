@@ -38,6 +38,7 @@
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 
@@ -242,6 +243,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onOutgoingData(const Data& data, Face& outFace);
 
+  VIRTUAL_WITH_TESTS void
+  onOutgoingData(const Name& name, const Data& data, Face& outFace);
+
   /** \brief incoming Nack pipeline
    */
   VIRTUAL_WITH_TESTS void
@@ -289,6 +293,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   }
 
 private:
+  ndn::KeyChain m_keyChain;
   ForwarderCounters m_counters;
 
   FaceTable m_faceTable;

@@ -211,8 +211,10 @@ Forwarder::onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& p
   // set PIT straggler timer
   this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
 
+  Name contentName(interest.getName());
+
   // goto outgoing Data pipeline
-  this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
+  this->onOutgoingData(contentName, data, *const_pointer_cast<Face>(inFace.shared_from_this()));
 }
 
 void
@@ -398,6 +400,50 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 
   // send Data
   outFace.sendData(data);
+  ++m_counters.nOutData;
+}
+
+void
+Forwarder::onOutgoingData(const Name& name, const Data& data, Face& outFace)
+{
+  shared_ptr<Data> m_data;
+  if(data.hasFunction()){
+    m_data = make_shared<Data>(name);
+    m_data->setFunction(data.getFunction());
+    m_data->setFreshnessPeriod(data.getFreshnessPeriod());
+    m_data->setFinalBlockId(data.getFinalBlockId());
+    m_data->setContent(data.getContent());
+    m_keyChain.sign(*m_data);
+  }
+  else{
+    m_data = make_shared<Data>(data.getName());
+    m_data->setFunction(data.getFunction());
+    m_data->setFreshnessPeriod(data.getFreshnessPeriod());
+    m_data->setFinalBlockId(data.getFinalBlockId());
+    m_data->setContent(data.getContent());
+    m_keyChain.sign(*m_data);
+  }
+
+  if (outFace.getId() == face::INVALID_FACEID) {
+    NFD_LOG_WARN("onOutgoingData face=invalid data=" << m_data->getName());
+    return;
+  }
+  NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << m_data->getName());
+
+  // /localhost scope control
+  bool isViolatingLocalhost = outFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
+                              scope_prefix::LOCALHOST.isPrefixOf(m_data->getName());
+  if (isViolatingLocalhost) {
+    NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() <<
+                  " data=" << m_data->getName() << " violates /localhost");
+    // (drop)
+    return;
+  }
+
+  // TODO traffic manager
+
+  // send Data
+  outFace.sendData(*m_data);
   ++m_counters.nOutData;
 }
 
