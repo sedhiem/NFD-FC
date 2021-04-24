@@ -123,12 +123,18 @@ public:
   void
   beforeErase(iterator i);
 
+  //void
+  //doErase(iterator i);
+
   /** \brief invoked by CS before an entry is used to match a lookup
    *
    *  The policy may witness this usage to make better eviction decisions in the future.
    */
   void
   beforeUse(iterator i);
+
+  void
+  Erase(iterator i);
 
 protected:
   /** \brief invoked after a new entry is created in CS
@@ -149,6 +155,9 @@ protected:
    */
   virtual void
   doAfterRefresh(iterator i) = 0;
+
+  virtual void
+  doErase(iterator i) = 0;
 
   /** \brief invoked before an entry is erased due to management command
    *  \note This will not be invoked for an entry being evicted by policy.

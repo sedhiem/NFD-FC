@@ -91,6 +91,12 @@ private:
   doBeforeErase(iterator i) override;
 
   virtual void
+  doErase(iterator i) override;
+
+  //virtual void
+  //executeErase(iterator i);
+
+  virtual void
   doBeforeUse(iterator i) override;
 
   virtual void
@@ -103,6 +109,9 @@ private:
   void
   evictOne();
 
+  void
+  eraseOne(iterator i);
+
   /** \brief attaches the entry to an appropriate queue
    *  \pre the entry is not in any queue
    */
@@ -114,6 +123,9 @@ private:
    */
   void
   detachQueue(iterator i);
+
+  //void
+  //EraseQueue(iterator i);
 
   /** \brief moves an entry from FIFO queue to STALE queue
    */

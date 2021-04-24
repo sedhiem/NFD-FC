@@ -147,18 +147,13 @@ Cs::insert(const Data& data, bool isUnsolicited)
 }
 
 void
-Cs::find(const Interest& interest,
-         const HitCallback& hitCallback,
-         const MissCallback& missCallback) const
+Cs::erase(const Interest& interest) const
 {
-  BOOST_ASSERT(static_cast<bool>(hitCallback));
-  BOOST_ASSERT(static_cast<bool>(missCallback));
-
   Name funcname(interest.getFunction().toUri());
   Name contentname(interest.getName());
   const Name& prefix = contentname.append(funcname);
   bool isRightmost = interest.getChildSelector() == 1;
-  NFD_LOG_DEBUG("find " << prefix << (isRightmost ? " R" : " L"));
+  NFD_LOG_DEBUG("findforerase " << prefix << (isRightmost ? " R" : " L"));
 
   iterator first = m_table.lower_bound(prefix);
   iterator last = m_table.end();
@@ -175,6 +170,44 @@ Cs::find(const Interest& interest,
   }
 
   if (match == last) {
+    return;
+  }
+  NFD_LOG_DEBUG("  DoErase " << match->getName());
+  m_policy->Erase(match);
+}
+
+void
+Cs::find(const Interest& interest,
+         const HitCallback& hitCallback,
+         const MissCallback& missCallback) const
+{
+  BOOST_ASSERT(static_cast<bool>(hitCallback));
+  BOOST_ASSERT(static_cast<bool>(missCallback));
+
+  Name funcname(interest.getFunction().toUri());
+  Name contentname(interest.getName());
+  const Name& prefix = contentname.append(funcname);
+  bool isRightmost = interest.getChildSelector() == 1;
+  NFD_LOG_DEBUG("findforuse " << prefix << (isRightmost ? " R" : " L"));
+
+  iterator first = m_table.lower_bound(prefix);
+  iterator last = m_table.end();
+  if (prefix.size() > 0) {
+    last = m_table.lower_bound(prefix.getSuccessor());
+  }
+
+  iterator match = last;
+  if (isRightmost) {
+    match = this->findRightmost(interest, first, last);
+  }
+  else {
+    match = this->findLeftmost(interest, first, last);
+  }
+
+  if (match == last || match->getName() != prefix) {
+    if(match != last){
+      m_policy->Erase(match);
+    }
     NFD_LOG_DEBUG("  no-match");
     missCallback(interest);
     return;

@@ -93,6 +93,13 @@ Policy::beforeErase(iterator i)
 }
 
 void
+Policy::Erase(iterator i)
+{
+  BOOST_ASSERT(m_cs != nullptr);
+  this->doErase(i);
+}
+
+void
 Policy::beforeUse(iterator i)
 {
   BOOST_ASSERT(m_cs != nullptr);

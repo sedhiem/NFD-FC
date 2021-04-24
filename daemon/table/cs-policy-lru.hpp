@@ -85,11 +85,17 @@ private:
   virtual void
   evictEntries() override;
 
+  virtual void
+  doErase(iterator i) override;
+
 private:
   /** \brief moves an entry to the end of queue
    */
   void
   insertToQueue(iterator i, bool isNewEntry);
+
+  void
+  eraseOne(iterator i);
 
 private:
   Queue m_queue;

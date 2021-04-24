@@ -293,6 +293,8 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   }
 
 private:
+  int m_n = 0;
+  int m_zerocounter = 0;
   ndn::KeyChain m_keyChain;
   ForwarderCounters m_counters;
 

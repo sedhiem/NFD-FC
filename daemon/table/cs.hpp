@@ -87,11 +87,8 @@ public:
        const MissCallback& missCallback) const;
 
   void
-  erase(const Name& exactName)
-  {
-    BOOST_ASSERT_MSG(false, "not implemented");
-  }
-
+  erase(const Interest& interest) const;
+  
   /** \brief changes capacity (in number of packets)
    */
   void

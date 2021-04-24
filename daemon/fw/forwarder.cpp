@@ -80,10 +80,49 @@ void
 Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 {
   // receive Interest
+  /*if(interest.getName().get(-1).toSegment() == 0){
+    if(interest.getEraseCache() == 1){
+      while(m_n != 0 && m_zerocounter != 0){
+
+      }
+      if(m_n == 1 && m_zerocounter == 0){
+        m_zerocounter = 2;
+      }
+    }else{
+      while(m_zerocounter != 0){
+        
+      }
+    }
+    }*/
+  m_n++;
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
     interest.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
     ++m_counters.nInInterests;
+
+    uint32_t cachehitbool;
+    cachehitbool = interest.getEraseCache();
+    NFD_LOG_DEBUG("EraseCacheNumber is " << interest.getEraseCache());
+    if (cachehitbool == 1){
+      NFD_LOG_DEBUG("RESET CACHE RESET CACHE RESET CACHE");
+      Name m_funcname(interest.getFunction().toUri());
+      Name prefix(interest.getName());
+      Name erasecachename;
+      if(m_funcname != "/"){
+        erasecachename = prefix.append(m_funcname);
+      }else{
+        erasecachename = prefix;
+      }
+      NFD_LOG_DEBUG(erasecachename);
+      //m_cs.erase(erasecachename);
+      //interest.setName("/test/producer/content/test.jpg/00%01");
+      m_cs.erase(interest);
+    }else{
+      NFD_LOG_DEBUG("NOT RESET CACHE NOT RESET CACHE NOT RESET CACHE");
+    }
+    NFD_LOG_DEBUG("Function is " << interest.getFunction());
+
+    const_cast<Interest&>(interest).refreshEraseCache();
 
   // /localhost scope control
   bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
@@ -131,8 +170,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 
   // cancel unsatisfy & straggler timer
   this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
-
+  
   // is pending?
+  // && cachehitbool != 1
   if (!pitEntry->hasInRecords()) {
     m_cs.find(interest,
               bind(&Forwarder::onContentStoreHit, this, ref(inFace), pitEntry, _1, _2),
@@ -201,7 +241,7 @@ Forwarder::onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& 
 void
 Forwarder::onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
                              const Interest& interest, const Data& data)
-{
+{  
   NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName());
   ++m_counters.nCsHits;
 
@@ -229,6 +269,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outF
   // send Interest
   outFace.sendInterest(interest);
   ++m_counters.nOutInterests;
+  //const_cast<Interest&>(interest).refreshEraseCache();
 }
 
 void
@@ -303,7 +344,15 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   }
 
   // CS insert
+  std::string prefix;
+  for(int i = 0; i < data.getName().size() - 2; i++)
+  {
+    prefix.append("/");
+    prefix.append(data.getName().get(i).toUri());
+  }
+  if(prefix == "/test/producer/content"){
   m_cs.insert(data);
+  }
 
   std::set<Face*> pendingDownstreams;
   bool pitSatisfyFlag = true;
@@ -401,6 +450,13 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
   // send Data
   outFace.sendData(data);
   ++m_counters.nOutData;
+  m_n--;
+  if(m_n == 0){
+    m_zerocounter--;
+  }
+  if(m_zerocounter < 0){
+    m_zerocounter == 0;
+  }
 }
 
 void
@@ -445,6 +501,13 @@ Forwarder::onOutgoingData(const Name& name, const Data& data, Face& outFace)
   // send Data
   outFace.sendData(*m_data);
   ++m_counters.nOutData;
+  m_n--;
+  if(m_n == 0){
+    m_zerocounter--;
+  }
+  if(m_zerocounter < 0){
+    m_zerocounter == 0;
+  }
 }
 
 void
@@ -568,7 +631,7 @@ Forwarder::setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry)
     std::max_element(pitEntry->in_begin(), pitEntry->in_end(), &compare_InRecord_expiry);
 
   time::steady_clock::TimePoint lastExpiry = lastExpiring->getExpiry();
-  time::nanoseconds lastExpiryFromNow = lastExpiry - time::steady_clock::now();
+  time::nanoseconds lastExpiryFromNow = lastExpiry - time::steady_clock::now() + time::nanoseconds(0);
   if (lastExpiryFromNow <= time::seconds::zero()) {
     // TODO all in-records are already expired; will this happen?
   }
@@ -582,7 +645,7 @@ void
 Forwarder::setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
                              ndn::optional<time::milliseconds> dataFreshnessPeriod)
 {
-  time::nanoseconds stragglerTime = time::milliseconds(100);
+  time::nanoseconds stragglerTime = time::milliseconds(1000000);
 
   scheduler::cancel(pitEntry->m_stragglerTimer);
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,

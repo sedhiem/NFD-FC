@@ -52,6 +52,12 @@ LruPolicy::doAfterRefresh(iterator i)
 }
 
 void
+LruPolicy::doErase(iterator i)
+{
+  this->eraseOne(i);
+}
+
+void
 LruPolicy::doBeforeErase(iterator i)
 {
   m_queue.get<1>().erase(i);
@@ -73,6 +79,16 @@ LruPolicy::evictEntries()
     m_queue.pop_front();
     this->emitSignal(beforeEvict, i);
   }
+}
+
+void
+LruPolicy::eraseOne(iterator i)
+{
+  BOOST_ASSERT(!m_queues[QUEUE_UNSOLICITED].empty() ||
+               !m_queues[QUEUE_STALE].empty() ||
+               !m_queues[QUEUE_FIFO].empty());
+
+  this->emitSignal(beforeEvict, i);
 }
 
 void
